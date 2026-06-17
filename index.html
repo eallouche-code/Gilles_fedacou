@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulation SCPI – M. et Mme Fédacou</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:       #111827;
+    --ink-soft:  #4b5563;
+    --mist:      #f3f4f6;
+    --paper:     #ffffff;
+    --line:      #e5e7eb;
+    --patrimy:   #1a6b4a;
+    --patrimy-2: #15573c;
+    --patrimy-l: #d1ede2;
+    --patrimy-m: #6dbf94;
+    --gold:      #c8a96e;
+    --gold-l:    #f5edd8;
+    --red:       #dc2626;
+    --red-l:     #fee2e2;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--mist);
+    color: var(--ink);
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--patrimy);
+    color: white;
+    padding: 44px 60px 36px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+  }
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--patrimy-m);
+    margin-bottom: 10px;
+  }
+  .header h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 34px;
+    font-weight: 400;
+    line-height: 1.15;
+    color: white;
+  }
+  .header h1 em { font-style: italic; color: var(--patrimy-m); }
+  .header-right { text-align: right; }
+  .tri-big {
+    font-family: 'DM Serif Display', serif;
+    font-size: 48px;
+    color: var(--patrimy-m);
+    line-height: 1;
+  }
+  .tri-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.5);
+    margin-top: 4px;
+  }
+  .header-meta {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 12px;
+    line-height: 1.8;
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 44px 40px 80px; }
+
+  /* ── KPIs ── */
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .kpi {
+    background: var(--paper);
+    padding: 22px 20px 18px;
+  }
+  .kpi-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .kpi-value.green { color: var(--patrimy); }
+  .kpi-value.gold  { color: #9a6f2a; }
+  .kpi-sub { font-size: 11px; color: var(--ink-soft); margin-top: 5px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ink);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+  }
+
+  /* ── HYPOTHESES ── */
+  .hyp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .hyp-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 22px;
+  }
+  .hyp-card h3 {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hyp-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .hyp-row:last-child { border-bottom: none; }
+  .hyp-key { color: var(--ink-soft); }
+  .hyp-val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .hyp-val.green { color: var(--patrimy); font-weight: 600; }
+  .hyp-val.amber { color: #9a6f2a; }
+
+  /* ── AVANTAGE FISCAL BADGE ── */
+  .fiscal-badge {
+    background: var(--patrimy-l);
+    border: 1px solid #a7d8be;
+    border-left: 4px solid var(--patrimy);
+    border-radius: 6px;
+    padding: 16px 22px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+  }
+  .fiscal-badge-icon {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .fiscal-badge-text { flex: 1; }
+  .fiscal-badge-title {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--patrimy-2);
+    margin-bottom: 3px;
+  }
+  .fiscal-badge-sub { font-size: 12px; color: var(--ink-soft); }
+  .fiscal-pill {
+    background: var(--patrimy);
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+
+  /* ── TABLEAU COMPARATIF ── */
+  .compare-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 36px;
+  }
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .compare-table th {
+    padding: 14px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--mist);
+    border-bottom: 2px solid var(--line);
+    text-align: center;
+    color: var(--ink);
+  }
+  .compare-table th:first-child { text-align: left; }
+  .compare-table th.col-20 {
+    background: var(--patrimy);
+    color: white;
+  }
+  .compare-table th.col-15 {
+    background: #e8f4ee;
+    color: var(--patrimy-2);
+  }
+  .compare-table td {
+    padding: 13px 24px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    text-align: center;
+    color: var(--ink-soft);
+  }
+  .compare-table td:first-child {
+    text-align: left;
+    color: var(--ink);
+    font-size: 13px;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr.highlight td {
+    background: var(--gold-l);
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .compare-table tr.highlight td:first-child { font-size: 13px; }
+  .val-mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    font-size: 14px;
+  }
+  .val-green { color: var(--patrimy); font-weight: 700; }
+  .val-gold  { color: #9a6f2a; font-weight: 700; }
+
+  /* ── CHART ── */
+  .chart-card {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 28px 24px 20px;
+    margin-bottom: 36px;
+  }
+  .chart-title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 20px;
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 40px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    font-size: 10px;
+    color: #9ca3af;
+    line-height: 1.8;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="eyebrow">Patrimy · Étude personnalisée · Acquisition SCPI à crédit</div>
+    <h1>M. et Mme <em>Fédacou</em><br>Simulation sur 20 ans</h1>
+  </div>
+  <div class="header-right">
+    <div class="tri-big">7,3%</div>
+    <div class="tri-label">TRI de l'opération</div>
+    <div class="header-meta">Début : 1ᵉʳ juillet 2026<br>Document non contractuel — 17/06/2026</div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Montant investi</div>
+      <div class="kpi-value">150 000 €</div>
+      <div class="kpi-sub">Financé à 100 % à crédit</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Mensualité de crédit</div>
+      <div class="kpi-value">966 €</div>
+      <div class="kpi-sub">Taux 4,50 % — 240 mois</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Revenus locatifs bruts</div>
+      <div class="kpi-value green">663 €/mois</div>
+      <div class="kpi-sub">Rendement 5,30 % — dès juil. 2026</div>
+    </div>
+  </div>
+
+  <!-- Hypothèses -->
+  <div class="section-title">Hypothèses de simulation</div>
+  <div class="hyp-grid">
+    <div class="hyp-card">
+      <h3>Financement</h3>
+      <div class="hyp-row"><span class="hyp-key">Capital emprunté</span><span class="hyp-val amber">150 750 €</span></div>
+      <div class="hyp-row"><span class="hyp-key">Taux annuel</span><span class="hyp-val">4,50 %</span></div>
+      <div class="hyp-row"><span class="hyp-key">Durée</span><span class="hyp-val">240 mois</span></div>
+      <div class="hyp-row"><span class="hyp-key">Mensualité</span><span class="hyp-val amber">966 €</span></div>
+      <div class="hyp-row"><span class="hyp-key">ADI</span><span class="hyp-val">0,00 %</span></div>
+    </div>
+    <div class="hyp-card">
+      <h3>Revenus &amp; Fiscalité</h3>
+      <div class="hyp-row"><span class="hyp-key">Rendement SCPI</span><span class="hyp-val">5,30 %</span></div>
+      <div class="hyp-row"><span class="hyp-key">Loyers mensuels</span><span class="hyp-val">663 €</span></div>
+      <div class="hyp-row"><span class="hyp-key">Revalorisation loyers</span><span class="hyp-val">1,0 % / an</span></div>
+      <div class="hyp-row"><span class="hyp-key">Revalorisation des parts</span><span class="hyp-val">1,0 % / an</span></div>
+      <div class="hyp-row"><span class="hyp-key">% parc étranger</span><span class="hyp-val green">100 %</span></div>
+      <div class="hyp-row"><span class="hyp-key">Imposition revenus étrangers</span><span class="hyp-val green">15 % seulement</span></div>
+    </div>
+  </div>
+
+  <!-- Badge fiscal -->
+  <div class="fiscal-badge">
+    <div class="fiscal-badge-icon">🌍</div>
+    <div class="fiscal-badge-text">
+      <div class="fiscal-badge-title">Avantage clé : SCPI 100 % étrangères</div>
+      <div class="fiscal-badge-sub">Les revenus sont imposés à 15 % au lieu de 47,2 % (IR + prélèvements sociaux pour la tranche applicable). Économie fiscale substantielle chaque année.</div>
+    </div>
+    <div class="fiscal-pill">15 % vs 47,2 %</div>
+  </div>
+
+  <!-- Tableau comparatif -->
+  <div class="section-title">Résultats selon la durée de détention</div>
+  <div class="compare-card">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th class="col-15">Sortie à 15 ans</th>
+          <th class="col-20">Sortie à 20 ans ✦</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Effort d'épargne par mois</td>
+          <td><span class="val-mono">≈ 300 €/mois</span></td>
+          <td><span class="val-mono">≈ 295 €/mois</span></td>
+        </tr>
+        <tr>
+          <td>Effort d'épargne total</td>
+          <td><span class="val-mono">54 000 €</span></td>
+          <td><span class="val-mono">70 800 €</span></td>
+        </tr>
+        <tr>
+          <td>Capital créé</td>
+          <td><span class="val-mono val-green">102 938 €</span></td>
+          <td><span class="val-mono val-green">161 007 €</span></td>
+        </tr>
+        <tr class="highlight">
+          <td>Gain réalisé</td>
+          <td><span class="val-mono val-gold">48 938 €</span></td>
+          <td><span class="val-mono val-gold">90 200 €</span></td>
+        </tr>
+        <tr>
+          <td>Revenus mensuels nets après sortie</td>
+          <td><span class="val-mono">≈ 700 €/mois</span></td>
+          <td><span class="val-mono">≈ 700 €/mois</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Graphique capital créé -->
+  <div class="section-title">Capital créé année par année</div>
+  <div class="chart-card">
+    <div class="chart-title">Capital créé (€) — après remboursement du crédit, net d'impôts</div>
+    <canvas id="chartCapital" height="180"></canvas>
+  </div>
+
+  <div class="footer">
+    Simulation réalisée par Patrimy (Lonlay Associés) — Document non contractuel édité le 17/06/2026.<br>
+    Les performances passées ne préjugent pas des performances futures. La revalorisation des parts et des loyers est hypothétique (1 %/an). Fiscalité calculée sur la base d'un parc SCPI 100 % étranger, taux forfaitaire de 15 % applicable selon les conventions fiscales internationales. Couple, TMI 47,2 % sur revenus fonciers France.
+  </div>
+
+</div>
+
+<script>
+const labels = Array.from({length:20}, (_,i) => `An ${i+1}`);
+const capCree = [-10945,-4573,2038,8899,16020,23413,31090,39062,47343,55946,64885,73974,83183,92831,102938,113521,124598,136191,148320,161007];
+const colors  = capCree.map(v => v >= 0 ? 'rgba(26,107,74,0.85)' : 'rgba(220,38,38,0.75)');
+const borders = capCree.map(v => v >= 0 ? '#1a6b4a' : '#dc2626');
+
+new Chart(document.getElementById('chartCapital').getContext('2d'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Capital créé (€)',
+      data: capCree,
+      backgroundColor: colors,
+      borderColor: borders,
+      borderWidth: 1,
+      borderRadius: 3,
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ` ${Math.round(ctx.raw).toLocaleString('fr-FR')} €`
+        }
+      },
+      annotation: {}
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#6b7280' } },
+      y: {
+        grid: { color: '#f3f4f6' },
+        ticks: {
+          font: { size: 10, family: 'Inter' }, color: '#6b7280',
+          callback: v => (v >= 0 ? '' : '–') + Math.abs(v/1000).toFixed(0) + ' k€'
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
